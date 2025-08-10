@@ -3,6 +3,7 @@ package fr.tibo;
 import org.tinylog.Logger;
 
 import fr.tibo.bean.Film;
+import fr.tibo.util.FilmFicheGenerator;
 import fr.tibo.util.Films;
 import fr.tibo.util.Genres;
 
@@ -13,8 +14,8 @@ public class LabelVideo {
 
 		Genres.load();
 
-		Film f = Films.getFilm("Romeo Must Die", "2000");
-		System.out.println(f);
+		Film f = Films.getFilm("La mutante", "1995");
+		FilmFicheGenerator.drawFiche(f);
 
 		Logger.info("--- --- --- Ending LabelVideo --- --- ---");
 	}
