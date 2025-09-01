@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<movie>
+    <title></title>
+    <originaltitle></originaltitle>
+    <userrating>0</userrating>
+    <plot></plot>
+    <mpaa></mpaa>
+    <uniqueid type="" default="true"></uniqueid> <!-- add a value to type="" eg imdb, tmdb, home, sport, docu, see sample below -->
+    <genre></genre>
+    <tag></tag>
+    <country></country>
+    <set>
+        <name></name>
+        <overview></overview>
+    </set>
+    <credits></credits>
+    <director></director>
+    <premiered></premiered> <!-- yyyy-mm-dd -->
+    <studio></studio>
+    <actor>
+        <name></name>
+        <role></role>
+        <order></order>
+    </actor>
+</movie>

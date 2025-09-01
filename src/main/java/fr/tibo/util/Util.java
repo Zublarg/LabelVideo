@@ -42,6 +42,11 @@ public class Util {
 		}
 	}
 
+	public static String getEscapedName(String name) {
+		return name.replace(",", "").replace(':', '-').replace('?', '!').replace('|', '-').replace('\\', '-')
+				.replace('/', '-');
+	}
+
 	public static Path dlImage(String ImagePath) {
 		try {
 
@@ -58,7 +63,7 @@ public class Util {
 				Logger.info("Image Downloaded : {}", usedPath);
 				return usedPath;
 			} else {
-				Logger.warn("No Response !\nMessage : {}", response.body());
+				Logger.warn("No Response ! Code : {} , Message : {}", response.statusCode(), response.body());
 				return null;
 			}
 		} catch (Exception e) {

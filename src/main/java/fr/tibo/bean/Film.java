@@ -7,14 +7,13 @@ import java.util.List;
 import java.util.Locale;
 import java.util.stream.Collectors;
 
-import org.tinylog.Logger;
-
 import com.fasterxml.jackson.databind.JsonNode;
 
+import fr.tibo.util.Classification;
 import fr.tibo.util.Genres;
-import fr.tibo.util.Util;
 
 public class Film {
+	private static final DateTimeFormatter year_formatter = DateTimeFormatter.ofPattern("yyyy");
 	private static final DateTimeFormatter un_formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 	private static final DateTimeFormatter re_formatter = DateTimeFormatter.ofPattern("MMM yyyy", Locale.FRENCH);
 	private String id;
@@ -22,22 +21,32 @@ public class Film {
 	private String original_title;
 	private String overview;
 	private String poster_path;
+	private String json_release_date;
 	private String release_date;
+	private String release_year;
 	private String note;
 	private String genres;
-	private String classification;
+	private String saga;
+	private int sagaOrder = 0;
+	private Classification classification = Classification.NA;
 	private String duree;
+	private String realDuree;
+	private String audioAndSubs;
+	private String fileExtension;
 
 	public Film(JsonNode jsonNode) {
 		id = jsonNode.get("id").asText();
-		System.out.println(id);
 		title_fr = jsonNode.get("title").asText();
 		original_title = jsonNode.get("original_title").asText();
-		overview = jsonNode.get("overview").asText();
+		overview = jsonNode.get("overview").asText().replace('"', '\'').replace('\n', ' ').replace('\r', ' ')
+				.replaceAll(" {2,}", " ");
 		poster_path = jsonNode.get("poster_path").asText();
 		note = jsonNode.get("vote_average").asText();
-		LocalDate release_date = LocalDate.parse(jsonNode.get("release_date").asText(), un_formatter);
-		this.release_date = re_formatter.format(release_date);
+		json_release_date = jsonNode.get("release_date").asText();
+		LocalDate full_release_date = LocalDate.parse(json_release_date, un_formatter);
+		release_date = re_formatter.format(full_release_date);
+		release_year = year_formatter.format(full_release_date);
+		saga = "";
 		JsonNode genre_ids = jsonNode.get("genre_ids");
 		List<String> genres = new ArrayList<>();
 		for (JsonNode genreNode : genre_ids) {
@@ -45,31 +54,52 @@ public class Film {
 			genres.add(Genres.get(id));
 		}
 		this.genres = genres.stream().collect(Collectors.joining(", "));
-		classification = createClassification(id);
-		duree = createRuntime(id);
+	}
+
+	public Film(String id, String title_fr, String original_title, String overview, String poster_path,
+			String json_release_date, String note, String genres, String saga, int sagaOrder,
+			Classification classification, String duree, String realDuree, String audioAndSubs, String fileExtension) {
+		this.id = id;
+		this.title_fr = title_fr;
+		this.original_title = original_title;
+		this.overview = overview;
+		this.poster_path = poster_path;
+		this.json_release_date = json_release_date;
+		LocalDate full_release_date = LocalDate.parse(json_release_date, un_formatter);
+		release_date = re_formatter.format(full_release_date);
+		release_year = year_formatter.format(full_release_date);
+		this.note = note;
+		this.saga = saga;
+		this.sagaOrder = sagaOrder;
+		this.genres = genres;
+		this.classification = classification;
+		this.duree = duree;
+		this.realDuree = realDuree;
+		this.audioAndSubs = audioAndSubs;
+		this.fileExtension = fileExtension;
 	}
 
 	public String getId() {
 		if (id.isBlank())
-			return "??";
+			return "-";
 		return id;
 	}
 
 	public String getTitle_fr() {
 		if (title_fr.isBlank())
-			return "??";
+			return "-";
 		return title_fr;
 	}
 
 	public String getOriginal_title() {
 		if (original_title.isBlank())
-			return "??";
+			return "-";
 		return original_title;
 	}
 
 	public String getOverview() {
 		if (overview.isBlank())
-			return "??";
+			return "-";
 		return overview;
 	}
 
@@ -77,92 +107,92 @@ public class Film {
 		return poster_path;
 	}
 
+	public String getJson_release_date() {
+		return json_release_date;
+	}
+
 	public String getRelease_date() {
 		if (release_date.isBlank())
-			return "??";
+			return "-";
 		return release_date;
+	}
+
+	public String getRelease_year() {
+		return release_year;
 	}
 
 	public String getNote() {
 		if (note.isBlank())
-			return "??";
+			return "-";
 		return note;
 	}
 
 	public String getDuree() {
 		if (duree.isBlank())
-			return "??";
+			return "-";
 		return duree;
 	}
 
 	public String getGenres() {
 		if (genres.isBlank())
-			return "??";
+			return "-";
 		return genres;
 	}
 
-	public String getClassification() {
-		if (classification.isBlank())
-			return "??";
+	public Classification getClassification() {
 		return classification;
 	}
 
-	private static final String createRuntime(String id) {
-		JsonNode fullData = Util.getData("3/movie/" + id + "?append_to_response=runtime&language=fr-FR");
-		return fullData.get("runtime").asText();
+	public String getRealDuree() {
+		if (realDuree == null)
+			return "";
+		return realDuree;
 	}
 
-	private static final String createClassification(String id) {
-		JsonNode fullData = Util.getData("3/movie/" + id + "/release_dates");
-		String certification1 = "";
-		String certification2 = "";
-		String certification3 = "";
+	public void setRealDuree(String realDuree) {
+		this.realDuree = realDuree;
+	}
 
-		JsonNode results = fullData.get("results");
-		for (JsonNode releaseNode : results) {
-			String code_pays = releaseNode.get("iso_3166_1").asText();
-			String certification = releaseNode.get("release_dates").get(0).get("certification").asText();
+	public void setClassification(Classification classification) {
+		this.classification = classification;
+	}
 
-			switch (certification) {
-			case "G":
-			case "PG":
-			case "TP":
-			case "U":
-				certification = "Tous publics";
-				break;
-			case "PG13":
-			case "PG-13":
-				certification = "Accompagné d'un adulte (~13)";
-				break;
-			case "R":
-				certification = "Public averti (~16)";
-				break;
-			}
+	public void setDuree(String duree) {
+		this.duree = duree;
+	}
 
-			switch (code_pays) {
-			case "FR":
-				certification2 = certification;
-				break;
-			case "CZ":
-				certification1 = certification;
-				break;
-			case "GB":
-				certification3 = certification;
-				break;
-			}
-		}
+	public String getAudioAndSubs() {
+		return audioAndSubs;
+	}
 
-		Logger.info("Classification Pays FR : {}", certification2);
-		Logger.info("Classification Pays CZ : {}", certification1);
-		Logger.info("Classification Pays GB : {}", certification3);
+	public void setAudioAndSubs(String audioAndSubs) {
+		this.audioAndSubs = audioAndSubs;
+	}
 
-		if (certification1.trim().length() > 0)
-			return certification1;
-		if (certification3.trim().length() > 0)
-			return certification3;
-		if (certification2.trim().length() > 0)
-			return certification2;
-		return "";
+	public void setFileExtension(String filmExtension) {
+		this.fileExtension = filmExtension;
+	}
+
+	public String getFileExtension() {
+		return fileExtension;
+	}
+
+	public String getSaga() {
+		if (saga == null)
+			return "";
+		return saga;
+	}
+
+	public void setSaga(String saga) {
+		this.saga = saga;
+	}
+
+	public int getSagaOrder() {
+		return sagaOrder;
+	}
+
+	public void setSagaOrder(int sagaOrder) {
+		this.sagaOrder = sagaOrder;
 	}
 
 	@Override
@@ -175,4 +205,5 @@ public class Film {
 		sb.append(getGenres());
 		return sb.toString();
 	}
+
 }
